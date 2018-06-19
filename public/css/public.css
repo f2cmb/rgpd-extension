@@ -1,0 +1,76 @@
+
+/**
+ * Public CSS rules
+ */
+ input[type="radio"] {
+ 	-moz-appearance: radio !important;
+ 	margin: 0 5px 0 0;
+ }
+
+.form-outer li{
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+
+}
+
+.form-outer > li:not(:last-child){
+	margin-bottom: 15px;
+}
+
+.form-outer li input:not([type="checkbox"]),
+.form-outer li textarea{
+	padding: 10px;
+	border: 1px solid #c7c7c7;
+}
+
+.form-outer > li > label,
+.form-outer li p {
+	flex: 1 0 250px;
+	padding: 8px 0;
+}
+ 
+.form-outer > li > label + * {
+	flex: 1 0 220px;
+}
+
+.form-outer li button,
+.form-outer li input[type="submit"] {
+	margin-left: auto;
+	float: none;
+	width: auto;
+	border: none;
+}
+
+.form__title{
+	font-weight: 700;
+	margin-bottom: 20px;
+}
+
+.form__title h2{
+	width: 100%;
+}
+
+#gdrf-radio-label {
+	font-weight: 800;
+	display: block;
+	margin-bottom: .5em;
+}
+.gdrf-data-type-input, .gdrf-data-type-label {
+	display: inline-block;
+}
+.gdrf-success {
+	display: block;
+	margin: 0 0 1em 0;
+	padding: .5em 1em;
+	background-color: #ecf7ed;
+	border-left: 4px #46b450 solid;
+}
+.gdrf-errors {
+	display: block;
+	margin: 0 0 1em 0;
+	padding: .5em 1em;
+	background-color: #fbeaea;
+	border-left: 4px #dc3232 solid;
+}
+
