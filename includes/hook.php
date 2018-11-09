@@ -3,34 +3,15 @@
 /**
  * Hooks et traductions
  *
- * @link        http://example.me
+ * @link       https://example.me
  * @since      1.1
  *
  * @package    gdpr-data-request-form
  * @subpackage gdpr-data-request-form/public
  * @prefix     gdrf_
  */
-/**
- * Add extra options on admin
- *
- * @package    noyau
- * @subpackage noyau/admin
- * @subpackage noyau/admin/configurations.php
- * 
- */
-function f2cmb_rgpd_mail_option() {
-	register_setting( 'f2cmb_option_group_client', 'refrgpd_form_gf' );
-}
-add_action( 'f2cmb_configuration_clients_nouvelle_option', 'f2cmb_rgpd_mail_option' );
 
-function f2cmb_rgpd_mail_html(){ ?>
-	<fieldset class="formulairegestion-refrgpd">
-		<label for="nom_form_gf">Qui doit réceptionner les demandes liées au RGPD ?</label>
-		<input type="text" name="refrgpd_form_gf" id="refrgpd_form_gf" value="<?php echo get_option( 'refrgpd_form_gf' ); ?>" placeholder="exemple1@courriel.fr, exemple2@courriel.fr" />
-
-	</fieldset>
-<?php }
-add_action( 'f2cmb_configuration_clients_html_moderation', 'f2cmb_rgpd_mail_html', 46 );
+/////// in the original plugin, this is where we create the options fields to give a mail where the requests are sent
 
 /**
  * Modify confirm page 
@@ -42,11 +23,13 @@ function is_login_page() {
 	return in_array($GLOBALS['pagenow'], array('wp-login.php', 'wp-register.php'));
 }
 function my_confirmation_redirect(){
-	if( is_login_page() ){
-		if ( $_GET['action'] == 'confirmaction' ) {
-
-			header( "Location: '  .site_url() . 'systeme/confirmation-de-votre-demande/" );
-
+	if (isset($_GET['action'])){
+		if( is_login_page() ){
+			if ( $_GET['action'] == 'confirmaction' ) {
+				///URL of confirm page from the original plugin
+				header( "Location: '  .site_url() . 'systeme/confirmation-de-votre-demande/" );
+	
+			}
 		}
 	}
 }
@@ -54,7 +37,7 @@ function my_confirmation_redirect(){
 add_action( 'init', 'my_confirmation_redirect' );
 
 /**
- * Modify header to auto mail
+ * Modify header to auto mail for confirmation email
  *
  * @package    wordpress
  * @subpackage wp-includes/user.php
@@ -68,13 +51,26 @@ function add_user_request_email_flag( $subject ){
 	return $subject;
 }
 
-add_filter( 'wp_mail', 'change_default_wp_mail_headers', 10, 1 );
+add_filter( 'wp_mail', 'change_default_request_wp_mail_headers', 10, 1 );
 
-function change_default_wp_mail_headers( $args ) {
+function change_default_request_wp_mail_headers( $args ) {
 
-	$mymail = get_option( 'email_form_gf' );
+	$domain = network_home_url();
+	$find = array( 'http://', 'https://' );
+	$replace = '';
+	$domaincleaned = str_replace( $find, $replace, $domain );
+
+	$mymail =  get_option( 'refrgpd_form_gf' );
+
+	if ( empty( $mymail ) ){
+		$mymail = "nepasrepondre@$domaincleaned";
+	}
+
 	$myname = get_option( 'nom_form_gf' );
 
+	if ( empty( $myname ) ){
+		$myname = "Votre référent vie privée et données";
+	}
 
 	$subjectwithcheck = $args['subject'];
 	$checkstring  = '###check###';
@@ -87,13 +83,109 @@ function change_default_wp_mail_headers( $args ) {
 	}
 	return $args;
 }
+/**
+ * Modify header to auto mail for confirm export email
+ *
+ * @package    wordpress
+ * @subpackage wp-includes/user.php
+ * 
+ */
+
+add_filter( 'wp_privacy_personal_data_email_content', 'add_data_sending_email_flag', 10, 1 );
+
+function add_data_sending_email_flag( $content ){
+	$content .= '###check###';
+	return $content;
+}
+add_filter( 'wp_mail', 'change_default_export_confirm_wp_mail_headers', 10, 1 );
+
+function change_default_export_confirm_wp_mail_headers( $args ) {
+
+	$domain = network_home_url();
+	$find = array( 'http://', 'https://' );
+	$replace = '';
+	$domaincleaned = str_replace( $find, $replace, $domain );
+
+	$mymail =  get_option( 'refrgpd_form_gf' );
+
+	if ( empty( $mymail ) ){
+		$mymail = "nepasrepondre@$domaincleaned";
+	}
+
+	$myname = get_option( 'nom_form_gf' );
+
+	if ( empty( $myname ) ){
+		$myname = "Votre référent vie privée et données";
+	}
+
+	$contentwithcheck = $args['message'];
+	$checkstring  = '###check###';
+	$result = strpos( $contentwithcheck, $checkstring );
+
+	if ( $result !== false ){
+		$args['headers'] = "from : $myname <$mymail>";
+		$cleanedcontent = str_replace( $checkstring, '', $contentwithcheck );
+		$args['message'] = $cleanedcontent;
+	}
+
+	return $args;
+}
+
+/**
+ * Modify header to auto mail for confirm export email
+ *
+ * @package    wordpress
+ * @subpackage wp-includes/user.php
+ * 
+ */
+
+add_filter( 'user_confirmed_action_email_content', 'add_erasure_confirmed_email_flag', 10, 1 );
+
+function add_erasure_confirmed_email_flag( $content ){
+	$content .= '###check###';
+	return $content;
+}
+add_filter( 'wp_mail', 'change_default_erasure_confirm_wp_mail_headers', 10, 1 );
+
+function change_default_erasure_confirm_wp_mail_headers( $args ) {
+
+	$domain = network_home_url();
+	$find = array( 'http://', 'https://' );
+	$replace = '';
+	$domaincleaned = str_replace( $find, $replace, $domain );
+
+	$mymail =  get_option( 'refrgpd_form_gf' );
+
+	if ( empty( $mymail ) ){
+		$mymail = "nepasrepondre@$domaincleaned";
+	}
+
+	$myname = get_option( 'nom_form_gf' );
+
+	if ( empty( $myname ) ){
+		$myname = "Votre référent vie privée et données";
+	}
+
+	$contentwithcheck = $args['message'];
+	$checkstring  = '###check###';
+	$result = strpos( $contentwithcheck, $checkstring );
+
+	if ( $result !== false ){
+		$args['headers'] = "from : $myname <$mymail>";
+		$cleanedcontent = str_replace( $checkstring, '', $contentwithcheck );
+		$args['message'] = $cleanedcontent;
+	}
+	
+	return $args;
+}
+
 
 /**
  * Gravity form exporter hook
  *
- * @package    f2cmb-data-request-form
- * @subpackage f2cmb-data-request-form/includes
- * @subpackage f2cmb-data-request-form/includes/data-request.php
+ * @package    rgpd-data-request-form
+ * @subpackage rgpd-data-request-form/includes
+ * @subpackage rgpd-data-request-form/includes/data-request.php
  * 
  */
 
@@ -110,9 +202,9 @@ add_filter( 'wp_privacy_personal_data_exporters', 'register_gravity_exporter' );
 /**
  * Gravity form eraser hook
  *
- * @package    f2cmb-data-request-form
- * @subpackage f2cmb-data-request-form/includes
- * @subpackage f2cmb-data-request-form/includes/data-request.php
+ * @package    rgpd-data-request-form
+ * @subpackage rgpd-data-request-form/includes
+ * @subpackage rgpd-data-request-form/includes/data-request.php
  * 
  */
 
@@ -127,11 +219,11 @@ function register_gravity_eraser( $gformErasers ) {
 add_filter( 'wp_privacy_personal_data_erasers','register_gravity_eraser');
 
 /**
- * Mailpoet exporter hook
+ * Mailpoet 2 exporter hook
  *
- * @package    f2cmb-data-request-form
- * @subpackage f2cmb-data-request-form/includes
- * @subpackage f2cmb-data-request-form/includes/data-request.php
+ * @package    rgpd-data-request-form
+ * @subpackage rgpd-data-request-form/includes
+ * @subpackage rgpd-data-request-form/includes/data-request.php
  * 
  */
 
@@ -148,9 +240,9 @@ add_filter( 'wp_privacy_personal_data_exporters', 'register_mailpoet_exporter' )
 /**
  * Gravity form eraser hook
  *
- * @package    f2cmb-data-request-form
- * @subpackage f2cmb-data-request-form/includes
- * @subpackage f2cmb-data-request-form/includes/data-request.php
+ * @package    rgpd-data-request-form
+ * @subpackage rgpd-data-request-form/includes
+ * @subpackage rgpd-data-request-form/includes/data-request.php
  * 
  */
 
